@@ -62,6 +62,7 @@ public:
         ipv6 = PF_INET6
     };
 
+    socket(): fd(invalid) {}
     socket(int protocol, int type = socket::stream, int ip_proto = 0): fd(::socket(protocol, type, ip_proto)), protocol(protocol) {
         if(fd == invalid) {
             std::error_code ec{error::get_last_error(), error::socket_category()};
@@ -248,6 +249,27 @@ public:
         error::throw_on(ec, "socket::receive");
         return result;
     }
+
+    socket accept(std::error_code& ec) const noexcept {
+        ec.clear();
+        sockaddr_storage storage;
+        socklen_t size;
+
+        native_type ret = ::accept(fd, reinterpret_cast<sockaddr*>(&storage), &size);
+        if(ret == socket::invalid) {
+            ec.assign(error::get_last_error(), error::socket_category());
+            return {};
+        }
+
+        return { ret, protocol };
+    }
+
+    socket accept() const {
+        std::error_code ec;
+        auto&& ret = accept(ec);
+        error::throw_on(ec, "socket::accept");
+        return std::move(ret);
+    }
 private:
     template<typename T>
     T get_option(int level, int flags, std::error_code& ec) const noexcept {
@@ -291,6 +313,8 @@ private:
             ec.assign(error::get_last_error(), error::socket_category());
         }
     }
+
+    socket(native_type new_fd, int new_protocol): fd(new_fd), protocol(new_protocol) {}
 
     native_type fd;
     int protocol;
