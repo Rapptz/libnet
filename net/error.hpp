@@ -217,6 +217,25 @@ inline int get_last_error() noexcept {
     return errno;
 #endif // LIBNET_WINDOWS
 }
+
+inline void throw_on(const std::error_code& ec, const char* what) {
+    if(ec) {
+        throw std::system_error(ec, what);
+    }
+}
+
+template<typename Function>
+inline bool safely_invoke(Function f, std::error_code& ec) noexcept {
+    try {
+        f();
+        ec.clear(); // no throw so it's good.
+        return true;
+    }
+    catch(...) {
+        ec.assign(0xBADC0DE, std::generic_category());
+        return false;
+    }
+}
 } // error
 } // net
 

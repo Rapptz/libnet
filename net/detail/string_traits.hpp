@@ -60,7 +60,7 @@ struct string_traits<char[N]> {
         return arr;
     }
 
-    static size_t size(const char (&arr)[N]) noexcept {
+    static size_t size(const char (&)[N]) noexcept {
         return N - 1;
     }
 };
